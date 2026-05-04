@@ -9,60 +9,58 @@ jobs:
   release:
     permissions:
       contents: write
+
     strategy:
       fail-fast: false
       matrix:
         include:
           - platform: macos-latest
-            args: '--target aarch64-apple-darwin'
+            target: aarch64-apple-darwin
           - platform: macos-latest
-            args: '--target x86_64-apple-darwin'
+            target: x86_64-apple-darwin
           - platform: ubuntu-22.04
-            args: ''
+            target: ''
           - platform: windows-latest
-            args: ''
+            target: ''
 
     runs-on: ${{ matrix.platform }}
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Linux dependencies
-        if: matrix.platform == 'ubuntu-22.04'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev libssl-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev
-
+      # ---------------- Rust ----------------
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
         with:
-          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+          targets: ${{ matrix.target }}
 
       - name: Rust cache
         uses: swatinem/rust-cache@v2
         with:
           workspaces: './src-tauri -> target'
 
-      - name: Install Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
+      # ---------------- Linux deps ----------------
+      - name: Install Linux dependencies
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libssl-dev \
+            libgtk-3-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev \
+            patchelf
 
-      - name: Build and release
-        uses: tauri-apps/tauri-action@v0
+      # ---------------- Build Tauri ----------------
+      - name: Build Tauri app
+        run: npx tauri build --target ${{ matrix.target }}
+
+      # ---------------- Release ----------------
+      - name: Upload release assets
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            src-tauri/target/**/release/bundle/**
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tagName: ${{ github.ref_name }}
-          releaseName: 'FolderSync ${{ github.ref_name }}'
-          releaseBody: |
-            ## 📦 Download FolderSync
-
-              - **Windows:** Download the `.msi` file
-              - **macOS:** Download the `.dmg` file
-              - **Linux:** Use `.AppImage` (portable) or `.deb`
-
-              Just download, install, and run.
-          releaseDraft: false
-          prerelease: false
-          args: ${{ matrix.args }}
