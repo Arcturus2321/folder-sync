@@ -1,0 +1,17 @@
+# Rust / Cargo
+target/
+
+# Tauri
+src-tauri/target/
+
+# Node (if you ever add a JS build step)
+node_modules/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.iml

@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>FolderSync</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #1a1a1e;
+    --surface: #242428;
+    --surface2: #2e2e33;
+    --border: #3a3a42;
+    --border-active: #56565f;
+    --text: #f0f0f2;
+    --text-dim: #b0b0bc;
+    --text-muted: #78788a;
+    --accent: #3ddc84;
+    --accent-dim: rgba(61, 220, 132, 0.14);
+    --accent-glow: rgba(61, 220, 132, 0.35);
+    --red: #ff6b6b;
+    --red-dim: rgba(255, 107, 107, 0.14);
+    --yellow: #ffd166;
+    --yellow-dim: rgba(255, 209, 102, 0.14);
+    --blue: #74b3ff;
+    --mono: 'IBM Plex Mono', monospace;
+    --sans: 'Inter', system-ui, sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 14px;
+    line-height: 1.5;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    user-select: none;
+  }
+
+  /* ── Header ── */
+  .header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 20px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    flex-shrink: 0;
+  }
+
+  .logo {
+    width: 30px; height: 30px;
+    background: var(--accent);
+    border-radius: 7px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .logo svg { width: 17px; height: 17px; color: #000; }
+
+  .app-name {
+    font-family: var(--sans);
+    font-weight: 600;
+    font-size: 16px;
+    letter-spacing: 0.01em;
+    color: var(--text);
+  }
+
+  .header-spacer { flex: 1; }
+
+  .status-pill {
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 100px;
+    background: var(--accent-dim);
+    color: var(--accent);
+    border: 1px solid var(--accent-glow);
+    letter-spacing: 0.04em;
+  }
+
+  /* ── Layout ── */
+  .layout {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  /* ── Left panel ── */
+  .panel-left {
+    width: 330px;
+    flex-shrink: 0;
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+  }
+
+  .panel-title {
+    font-family: var(--sans);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    text-transform: uppercase;
+  }
+
+  /* ── Add pair form ── */
+  .add-form {
+    padding: 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    background: var(--surface);
+  }
+
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .field label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-dim);
+  }
+
+  .field-row {
+    display: flex;
+    gap: 6px;
+  }
+
+  input[type="text"] {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 13px;
+    padding: 7px 10px;
+    outline: none;
+    transition: border-color 0.15s;
+    min-width: 0;
+  }
+
+  input[type="text"]::placeholder { color: var(--text-muted); }
+  input[type="text"]:focus { border-color: var(--accent); }
+
+  .btn-browse {
+    flex-shrink: 0;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    color: var(--text-dim);
+    font-family: var(--sans);
+    font-size: 12px;
+    font-weight: 500;
+    padding: 7px 11px;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+
+  .btn-browse:hover {
+    border-color: var(--border-active);
+    color: var(--text);
+    background: var(--border);
+  }
+
+  .btn-add {
+    background: var(--accent);
+    color: #0a1a10;
+    border: none;
+    border-radius: 5px;
+    font-family: var(--sans);
+    font-weight: 600;
+    font-size: 13px;
+    padding: 9px 14px;
+    cursor: pointer;
+    transition: opacity 0.15s;
+    width: 100%;
+    margin-top: 2px;
+  }
+
+  .btn-add:hover { opacity: 0.88; }
+  .btn-add:disabled { opacity: 0.35; cursor: not-allowed; }
+
+  /* ── Pair list ── */
+  .pair-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .pair-list::-webkit-scrollbar { width: 5px; }
+  .pair-list::-webkit-scrollbar-track { background: transparent; }
+  .pair-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  .pair-empty {
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 13px;
+    padding: 30px 0;
+    line-height: 2;
+  }
+
+  .pair-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    transition: border-color 0.15s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .pair-card.active {
+    border-color: var(--border-active);
+  }
+
+  .pair-card.active::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: var(--accent);
+    border-radius: 8px 0 0 8px;
+  }
+
+  .pair-card.inactive::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: var(--border-active);
+    border-radius: 8px 0 0 8px;
+  }
+
+  .pair-top {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .pair-label {
+    font-weight: 600;
+    font-size: 14px;
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--text);
+  }
+
+  .pair-badge {
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 2px 7px;
+    border-radius: 100px;
+    letter-spacing: 0.04em;
+    font-weight: 500;
+  }
+
+  .pair-badge.on {
+    background: var(--accent-dim);
+    color: var(--accent);
+    border: 1px solid var(--accent-glow);
+  }
+
+  .pair-badge.off {
+    background: var(--surface2);
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+  }
+
+  .pair-paths {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .pair-path-row {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+
+  .path-icon {
+    font-family: var(--mono);
+    color: var(--text-muted);
+    flex-shrink: 0;
+    font-size: 10px;
+    font-weight: 500;
+    background: var(--surface2);
+    padding: 1px 5px;
+    border-radius: 3px;
+    border: 1px solid var(--border);
+  }
+
+  .path-text {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .pair-actions {
+    display: flex;
+    gap: 6px;
+    margin-top: 2px;
+  }
+
+  .btn-sm {
+    font-family: var(--sans);
+    font-size: 12px;
+    font-weight: 500;
+    padding: 5px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s;
+    border: 1px solid var(--border);
+    background: transparent;
+  }
+
+  .btn-toggle-on {
+    color: var(--accent);
+    border-color: var(--accent-glow);
+  }
+
+  .btn-toggle-on:hover { background: var(--accent-dim); }
+
+  .btn-toggle-off {
+    color: var(--text-dim);
+  }
+
+  .btn-toggle-off:hover { background: var(--surface2); color: var(--text); }
+
+  .btn-remove {
+    color: var(--red);
+    border-color: transparent;
+    margin-left: auto;
+  }
+
+  .btn-remove:hover { background: var(--red-dim); border-color: var(--red); }
+
+  /* ── Right panel ── */
+  .panel-right {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .log-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .btn-clear {
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text-muted);
+    font-family: var(--sans);
+    font-size: 11px;
+    font-weight: 500;
+    padding: 3px 9px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .btn-clear:hover { color: var(--text-dim); border-color: var(--border-active); background: var(--surface2); }
+
+  .log-feed {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .log-feed::-webkit-scrollbar { width: 5px; }
+  .log-feed::-webkit-scrollbar-track { background: transparent; }
+  .log-feed::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  .log-empty {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+    font-size: 13px;
+    text-align: center;
+    line-height: 2;
+  }
+
+  .log-entry {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    padding: 5px 8px;
+    border-radius: 5px;
+    font-size: 13px;
+    line-height: 1.4;
+    transition: background 0.1s;
+    animation: fadeIn 0.2s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(2px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .log-entry:hover { background: var(--surface); }
+
+  .log-time {
+    font-family: var(--mono);
+    color: var(--text-muted);
+    font-size: 11px;
+    flex-shrink: 0;
+    width: 68px;
+  }
+
+  .log-kind {
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 500;
+    padding: 2px 6px;
+    border-radius: 3px;
+    flex-shrink: 0;
+    width: 60px;
+    text-align: center;
+    letter-spacing: 0.03em;
+  }
+
+  .log-kind.added    { background: var(--accent-dim); color: var(--accent); }
+  .log-kind.modified { background: var(--yellow-dim); color: var(--yellow); }
+  .log-kind.removed  { background: var(--red-dim); color: var(--red); }
+  .log-kind.error    { background: var(--red-dim); color: var(--red); }
+  .log-kind.info     { background: rgba(116, 179, 255, 0.14); color: var(--blue); }
+
+  .log-msg {
+    color: var(--text-dim);
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* ── Footer ── */
+  .footer {
+    border-top: 1px solid var(--border);
+    padding: 7px 16px;
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    background: var(--surface);
+    flex-shrink: 0;
+  }
+
+  .footer-stat {
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  .footer-stat span {
+    color: var(--text-dim);
+    font-weight: 500;
+  }
+
+  .btn-autostart {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    color: var(--text-muted);
+    font-family: var(--sans);
+    font-size: 12px;
+    font-weight: 500;
+    padding: 4px 10px;
+    cursor: pointer;
+    transition: all 0.15s;
+    margin-left: 8px;
+  }
+
+  .btn-autostart:hover {
+    border-color: var(--border-active);
+    color: var(--text-dim);
+    background: var(--surface2);
+  }
+
+  .btn-autostart.enabled {
+    border-color: var(--accent-glow);
+    color: var(--accent);
+    background: var(--accent-dim);
+  }
+
+  /* ── Scrollbar global ── */
+  * { scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <div class="logo">
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M2 4h5l1.5 2H14v7H2z"/>
+      <path d="M9 10l-2 2 2 2M11 10l2 2-2 2" stroke-width="1.5"/>
+    </svg>
+  </div>
+  <span class="app-name">Folder<span style="color:var(--accent)">Sync</span></span>
+  <div class="header-spacer"></div>
+  <div class="status-pill" id="statusPill">● IDLE</div>
+  <button class="btn-autostart" id="btnAutostart" onclick="toggleAutostart()" title="Launch at login">
+    <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M8 2v4M8 2L6 4M8 2l2 2"/>
+      <path d="M3 7a5 5 0 1 0 10 0"/>
+    </svg>
+    <span id="autostartLabel">Login: OFF</span>
+  </button>
+</div>
+
+<!-- Main layout -->
+<div class="layout">
+
+  <!-- Left: pairs panel -->
+  <div class="panel-left">
+    <div class="panel-header">
+      <span class="panel-title">Sync Pairs</span>
+    </div>
+
+    <!-- Add form -->
+    <div class="add-form">
+      <div class="field">
+        <label>Label</label>
+        <input type="text" id="inputLabel" placeholder="e.g. Documents Backup" />
+      </div>
+      <div class="field">
+        <label>Source Folder</label>
+        <div class="field-row">
+          <input type="text" id="inputSource" placeholder="/path/to/source" />
+          <button class="btn-browse" onclick="browseFolder('source')">Browse</button>
+        </div>
+      </div>
+      <div class="field">
+        <label>Destination Folder</label>
+        <div class="field-row">
+          <input type="text" id="inputDest" placeholder="/path/to/destination" />
+          <button class="btn-browse" onclick="browseFolder('dest')">Browse</button>
+        </div>
+      </div>
+      <button class="btn-add" id="btnAdd" onclick="addPair()">+ Add Sync Pair</button>
+    </div>
+
+    <!-- List of pairs -->
+    <div class="pair-list" id="pairList">
+      <div class="pair-empty" id="pairEmpty">
+        No sync pairs yet.<br>Add one above to start.
+      </div>
+    </div>
+  </div>
+
+  <!-- Right: activity log -->
+  <div class="panel-right">
+    <div class="panel-header">
+      <span class="panel-title">Activity Log</span>
+      <div class="log-controls">
+        <span class="panel-title" id="logCount">0 events</span>
+        <button class="btn-clear" onclick="clearLog()">CLEAR</button>
+      </div>
+    </div>
+
+    <div class="log-feed" id="logFeed">
+      <div class="log-empty" id="logEmpty">Watching for changes...<br>Events will appear here.</div>
+    </div>
+  </div>
+</div>
+
+<!-- Footer -->
+<div class="footer">
+  <div class="footer-stat">pairs: <span id="statPairs">0</span></div>
+  <div class="footer-stat">active: <span id="statActive">0</span></div>
+  <div class="footer-stat">events: <span id="statEvents">0</span></div>
+</div>
+
+<script>
+const { invoke } = window.__TAURI__.core;
+const { open } = window.__TAURI__.dialog;
+const { listen } = window.__TAURI__.event;
+
+let pairs = {};
+let logEntries = [];
+let autostartEnabled = false;
+
+// ── Boot ──────────────────────────────────────────────────────────────────────
+
+async function init() {
+  // Load existing pairs
+  const saved = await invoke('list_pairs');
+  saved.forEach(p => pairs[p.id] = p);
+  renderPairs();
+
+  // Load existing log
+  const log = await invoke('get_log');
+  log.forEach(e => appendLogEntry(e, false));
+  updateStats();
+
+  // Load autostart state
+  autostartEnabled = await invoke('autostart_status');
+  renderAutostartBtn();
+
+  // Listen for live events
+  await listen('sync-event', (event) => {
+    appendLogEntry(event.payload, true);
+    updateStats();
+    flashStatus(event.payload.kind);
+  });
+}
+
+// ── Autostart ─────────────────────────────────────────────────────────────────
+
+async function toggleAutostart() {
+  autostartEnabled = !autostartEnabled;
+  await invoke('set_autostart', { enable: autostartEnabled });
+  renderAutostartBtn();
+}
+
+function renderAutostartBtn() {
+  const btn = document.getElementById('btnAutostart');
+  const lbl = document.getElementById('autostartLabel');
+  lbl.textContent = autostartEnabled ? 'Login: ON' : 'Login: OFF';
+  btn.classList.toggle('enabled', autostartEnabled);
+}
+
+// ── Folder picker ─────────────────────────────────────────────────────────────
+
+async function browseFolder(target) {
+  const selected = await open({ directory: true, multiple: false });
+  if (selected) {
+    if (target === 'source') {
+      document.getElementById('inputSource').value = selected;
+      if (!document.getElementById('inputLabel').value) {
+        const parts = selected.replace(/\\/g, '/').split('/');
+        document.getElementById('inputLabel').value = parts[parts.length - 1] || '';
+      }
+    } else {
+      document.getElementById('inputDest').value = selected;
+    }
+  }
+}
+
+// ── Add pair ──────────────────────────────────────────────────────────────────
+
+async function addPair() {
+  const label  = document.getElementById('inputLabel').value.trim();
+  const source = document.getElementById('inputSource').value.trim();
+  const dest   = document.getElementById('inputDest').value.trim();
+
+  if (!source || !dest) return;
+
+  const btn = document.getElementById('btnAdd');
+  btn.disabled = true;
+  btn.textContent = 'Adding...';
+
+  try {
+    const pair = await invoke('add_pair', {
+      label: label || source,
+      source,
+      destination: dest,
+    });
+    pairs[pair.id] = pair;
+    renderPairs();
+
+    document.getElementById('inputLabel').value = '';
+    document.getElementById('inputSource').value = '';
+    document.getElementById('inputDest').value = '';
+  } catch (e) {
+    alert('Error: ' + e);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '+ Add Sync Pair';
+  }
+}
+
+// ── Remove / toggle ───────────────────────────────────────────────────────────
+
+async function removePair(id) {
+  await invoke('remove_pair', { id });
+  delete pairs[id];
+  renderPairs();
+  updateStats();
+}
+
+async function togglePair(id) {
+  const pair = pairs[id];
+  const next = !pair.enabled;
+  await invoke('toggle_pair', { id, enabled: next });
+  pairs[id].enabled = next;
+  renderPairs();
+  updateStats();
+}
+
+// ── Render pairs ──────────────────────────────────────────────────────────────
+
+function renderPairs() {
+  const list = document.getElementById('pairList');
+  const empty = document.getElementById('pairEmpty');
+  const items = Object.values(pairs);
+
+  if (items.length === 0) {
+    empty.style.display = 'block';
+    // remove cards
+    list.querySelectorAll('.pair-card').forEach(c => c.remove());
+    updateStats();
+    return;
+  }
+  empty.style.display = 'none';
+
+  // Rebuild all cards (simple approach for small N)
+  list.querySelectorAll('.pair-card').forEach(c => c.remove());
+
+  items.forEach(pair => {
+    const card = document.createElement('div');
+    card.className = `pair-card ${pair.enabled ? 'active' : 'inactive'}`;
+    card.dataset.id = pair.id;
+
+    const srcShort = pair.source.length > 40
+      ? '…' + pair.source.slice(-38) : pair.source;
+    const dstShort = pair.destination.length > 40
+      ? '…' + pair.destination.slice(-38) : pair.destination;
+
+    card.innerHTML = `
+      <div class="pair-top">
+        <span class="pair-label">${escHtml(pair.label)}</span>
+        <span class="pair-badge ${pair.enabled ? 'on' : 'off'}">${pair.enabled ? 'ON' : 'OFF'}</span>
+      </div>
+      <div class="pair-paths">
+        <div class="pair-path-row">
+          <span class="path-icon">SRC</span>
+          <span class="path-text" title="${escHtml(pair.source)}">${escHtml(srcShort)}</span>
+        </div>
+        <div class="pair-path-row">
+          <span class="path-icon">DST</span>
+          <span class="path-text" title="${escHtml(pair.destination)}">${escHtml(dstShort)}</span>
+        </div>
+      </div>
+      <div class="pair-actions">
+        <button class="btn-sm ${pair.enabled ? 'btn-toggle-on' : 'btn-toggle-off'}"
+                onclick="togglePair('${pair.id}')">
+          ${pair.enabled ? 'Pause' : 'Resume'}
+        </button>
+        <button class="btn-sm btn-remove" onclick="removePair('${pair.id}')">Remove</button>
+      </div>
+    `;
+    list.appendChild(card);
+  });
+
+  updateStats();
+}
+
+// ── Log ───────────────────────────────────────────────────────────────────────
+
+function appendLogEntry(ev, live) {
+  logEntries.push(ev);
+
+  const feed = document.getElementById('logFeed');
+  const empty = document.getElementById('logEmpty');
+  empty.style.display = 'none';
+
+  const t = new Date(ev.timestamp);
+  const time = t.toLocaleTimeString('en-CA', { hour12: false });
+
+  const row = document.createElement('div');
+  row.className = 'log-entry';
+  row.innerHTML = `
+    <span class="log-time">${escHtml(time)}</span>
+    <span class="log-kind ${ev.kind}">${ev.kind.toUpperCase()}</span>
+    <span class="log-msg" title="${escHtml(ev.message)}">${escHtml(ev.message)}</span>
+  `;
+  feed.appendChild(row);
+
+  if (live) {
+    feed.scrollTop = feed.scrollHeight;
+  }
+
+  document.getElementById('logCount').textContent = `${logEntries.length} events`;
+}
+
+async function clearLog() {
+  await invoke('clear_log');
+  logEntries = [];
+  const feed = document.getElementById('logFeed');
+  feed.querySelectorAll('.log-entry').forEach(r => r.remove());
+  document.getElementById('logEmpty').style.display = 'flex';
+  document.getElementById('logCount').textContent = '0 events';
+  updateStats();
+}
+
+// ── Status flash ──────────────────────────────────────────────────────────────
+
+let statusTimer = null;
+function flashStatus(kind) {
+  const pill = document.getElementById('statusPill');
+  const labels = { added: 'SYNCING', modified: 'SYNCING', removed: 'SYNCING', error: 'ERROR', info: 'SYNCING' };
+  const colors = { added: 'var(--accent)', modified: 'var(--yellow)', removed: 'var(--red)', error: 'var(--red)', info: 'var(--blue)' };
+  pill.textContent = '● ' + (labels[kind] || 'ACTIVE');
+  pill.style.color = colors[kind] || 'var(--accent)';
+  clearTimeout(statusTimer);
+  statusTimer = setTimeout(() => {
+    pill.textContent = '● IDLE';
+    pill.style.color = 'var(--accent)';
+  }, 2000);
+}
+
+// ── Stats ─────────────────────────────────────────────────────────────────────
+
+function updateStats() {
+  const all = Object.values(pairs);
+  document.getElementById('statPairs').textContent = all.length;
+  document.getElementById('statActive').textContent = all.filter(p => p.enabled).length;
+  document.getElementById('statEvents').textContent = logEntries.length;
+}
+
+// ── Utils ─────────────────────────────────────────────────────────────────────
+
+function escHtml(s) {
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+// ── Go ────────────────────────────────────────────────────────────────────────
+
+document.addEventListener('DOMContentLoaded', init);
+document.getElementById('inputDest').addEventListener('keydown', e => {
+  if (e.key === 'Enter') addPair();
+});
+</script>
+</body>
+</html>
