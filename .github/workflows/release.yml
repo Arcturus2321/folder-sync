@@ -19,9 +19,9 @@ jobs:
           - platform: macos-latest
             target: x86_64-apple-darwin
           - platform: ubuntu-22.04
-            target: ''
+            target: x86_64-unknown-linux-gnu
           - platform: windows-latest
-            target: ''
+            target: x86_64-pc-windows-msvc
 
     runs-on: ${{ matrix.platform }}
 
@@ -52,9 +52,13 @@ jobs:
             librsvg2-dev \
             patchelf
 
+      # ---------------- Install Tauri CLI ----------------
+      - name: Install Tauri CLI
+        run: cargo install tauri-cli
+
       # ---------------- Build Tauri ----------------
       - name: Build Tauri app
-        run: npx tauri build --target ${{ matrix.target }}
+        run: cargo tauri build --target ${{ matrix.target }}
 
       # ---------------- Release ----------------
       - name: Upload release assets
