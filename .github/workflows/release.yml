@@ -65,4 +65,4 @@ jobs:
               Just download, install, and run.
           releaseDraft: false
           prerelease: false
-          args: ${{ matrix.args }} --bundles all
+          args: ${{ matrix.args }}
